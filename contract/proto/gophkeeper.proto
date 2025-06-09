@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "github.com/iurnickita/gophkeeper/contract/proto";
+
+message Empty {}
+
+message RegisterRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string token = 1;
+}
+
+message AuthenticateRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message AuthenticateResponse {
+    string token = 1;
+}
+
+message ListResponse {
+    repeated string unitname = 1;
+}
+
+message ReadRequest {
+    string unitname = 1;
+}
+
+message ReadResponse {
+    int32 unittype = 1;
+    bytes unitdata = 2;
+}
+
+message WriteRequest {
+    string unitname = 1;
+    int32 unittype = 2;
+    bytes unitdata = 3;
+}
+
+message DeleteRequest {
+    string unitname = 1;
+}
+
+service Gophkeeper {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+    rpc List(Empty) returns (ListResponse);
+    rpc Read(ReadRequest) returns (ReadResponse);
+    rpc Write(WriteRequest) returns (Empty);
+    rpc Delete(DeleteRequest) returns (Empty);
+}
