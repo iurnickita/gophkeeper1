@@ -1,17 +1,19 @@
-package aesgcm
+package service
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/iurnickita/gophkeeper1/internal/server/crypto/aesgcm/config"
+	"github.com/iurnickita/gophkeeper1/internal/server/config"
+	"github.com/iurnickita/gophkeeper1/internal/server/crypto/aesgcm"
+	"github.com/iurnickita/gophkeeper1/internal/server/logger"
 	"github.com/iurnickita/gophkeeper1/internal/server/model"
 	"github.com/iurnickita/gophkeeper1/internal/server/store"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCrypter(t *testing.T) {
-
+func TestService(t *testing.T) {
 	tests := []struct {
 		name string
 		unit model.Unit
@@ -35,25 +37,32 @@ func TestCrypter(t *testing.T) {
 
 	// Config
 	var cfg config.Config
-	cfg.MasterSK = "cb459063d4bbbd4ce04a7c5b6e8121e7933630bada8fcb3abc20f6ca0aba3793"
-	cfg.NewSKIntervalD = 30
+	cfg.Crypter.MasterSK = "cb459063d4bbbd4ce04a7c5b6e8121e7933630bada8fcb3abc20f6ca0aba3793"
+	cfg.Crypter.NewSKIntervalD = 30
+	cfg.Logger.LogLevel = "debug"
 	// Store
 	store, _ := store.NewStoreMock()
 	// Crypter
-	crypter, err := NewCrypter(cfg, store)
+	crypter, err := aesgcm.NewCrypter(cfg.Crypter, store)
+	require.NoError(t, err)
+	// Logger
+	logger, err := logger.NewZapLog(cfg.Logger)
+	require.NoError(t, err)
+	// Service
+	service, err := NewService(cfg.Service, store, crypter, logger)
 	require.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// Шифрование
-			encrUnit, err := crypter.UnitEncrypt(test.unit)
+			ctx := context.Background()
+			// Write
+			err = service.Write(ctx, test.unit)
 			require.NoError(t, err)
-			// Дешифрование
-			decrUnit, err := crypter.UnitDecrypt(encrUnit)
+			// Read
+			respUnit, err := service.Read(
+				ctx, test.unit.Key.UserID, test.unit.Key.UnitName)
 			require.NoError(t, err)
-			// Сравнение с исходным
-			require.Equal(t, test.unit, decrUnit)
+			require.Equal(t, test.unit, respUnit)
 		})
 	}
-
 }

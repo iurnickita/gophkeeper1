@@ -22,7 +22,7 @@ type Key struct {
 }
 
 // GetActual возвращает последний ключ
-func (sk encryptSK) GetActual() (Key, error) {
+func (sk *encryptSK) GetActual() (Key, error) {
 	len := len(sk.keys)
 	if len == 0 {
 		return Key{}, ErrNoEncryptKeys
@@ -31,7 +31,7 @@ func (sk encryptSK) GetActual() (Key, error) {
 }
 
 // GetOld возвращает архивный ключ для чтения старых записей
-func (sk encryptSK) GetOld(uploadedat time.Time) (Key, error) {
+func (sk *encryptSK) GetOld(uploadedat time.Time) (Key, error) {
 	// Поиск ключа по дате
 	for i := len(sk.keys) - 1; i >= 0; i-- {
 		key := sk.keys[i]
@@ -43,7 +43,7 @@ func (sk encryptSK) GetOld(uploadedat time.Time) (Key, error) {
 }
 
 // CreateNewKey возвращает новый ключ в формате JSON для дальнейшей записи
-func (sk encryptSK) CreateNewKey() (string, error) {
+func (sk *encryptSK) CreateNewKey() (string, error) {
 	// Формирование нового ключа
 	var key Key
 	key.EncryptSK = createNewKey()

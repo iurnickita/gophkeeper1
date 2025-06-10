@@ -187,7 +187,7 @@ func (c *cache) saveList() error {
 	if err != nil {
 		return err
 	}
-	_, err = c.token.file.Seek(0, 0)
+	_, err = c.list.file.Seek(0, 0)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (c *cache) saveUnits() error {
 	if err != nil {
 		return err
 	}
-	_, err = c.token.file.Seek(0, 0)
+	_, err = c.units.file.Seek(0, 0)
 	if err != nil {
 		return err
 	}

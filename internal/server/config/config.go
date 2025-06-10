@@ -41,7 +41,6 @@ func GetConfig() Config {
 	cfg.Store.DBDsn = "host=localhost user=bob password=bob dbname=gophkeeper sslmode=disable"
 	cfg.Crypter.MasterSK = "cb459063d4bbbd4ce04a7c5b6e8121e7933630bada8fcb3abc20f6ca0aba3793"
 	cfg.Crypter.NewSKIntervalD = 30
-	cfg.Logger.LogLevel = "debug"
 
 	return cfg
 }

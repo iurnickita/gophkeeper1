@@ -60,20 +60,25 @@ func (s service) Login(login string, password string) error {
 // List
 func (s service) List() ([]string, error) {
 	list, err := s.client.List(s.cache.GetToken())
-	switch err {
-	case nil:
+	if err == nil {
 		// Вывод из сервера
 		s.cache.SyncList(list)
 		return list, nil
-	default:
-		// Вывод из кэша
-		// тут надо отличать ошибку соединения от остальных
-		// case "connection_refused":
-		list, err = s.cache.GetList()
-		if err != nil {
-			return nil, err
+	} else {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.Unavailable:
+				// Connection refused - вывод из кэша
+				list, err = s.cache.GetList()
+				if err != nil {
+					return nil, err
+				}
+				return list, ErrOffline
+			default:
+				return nil, err
+			}
 		}
-		return list, ErrOffline
+		return nil, err
 	}
 }
 
@@ -109,8 +114,6 @@ func (s service) Write(unit model.Unit) error {
 	s.logger.Sugar().Debug(unit)
 	err := s.client.Write(s.cache.GetToken(), unit)
 	if err != nil {
-		// Это надо убрать
-		// А на стороне сервера сделать перезапись
 		if e, ok := status.FromError(err); ok {
 			switch e.Code() {
 			case codes.AlreadyExists:

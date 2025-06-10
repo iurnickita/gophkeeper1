@@ -23,7 +23,7 @@ func GetConfig() Config {
 	// По умолчанию на момент разработки
 	cfg.Cache.FileRepo = "data/"
 	cfg.Cache.ValidPeriod = 1
-	cfg.Logger.LogLevel = "debug"
+	cfg.Logger.LogLevel = "info"
 
 	return cfg
 }
