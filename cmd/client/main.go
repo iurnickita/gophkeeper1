@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/iurnickita/gophkeeper1/internal/client/cache"
@@ -11,6 +12,13 @@ import (
 	"github.com/iurnickita/gophkeeper1/internal/client/service"
 )
 
+// -ldflags
+var (
+	buildVersion string
+	buildDate    string
+	bulidCommit  string
+)
+
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -18,6 +26,12 @@ func main() {
 }
 
 func run() error {
+	// Флаги сборки (флаги линковщика)
+	fmt.Printf("buildVersion: %s\n", fillEmptyFlag(buildVersion))
+	fmt.Printf("buildDate: %s\n", fillEmptyFlag(buildDate))
+	fmt.Printf("bulidCommit: %s\n", fillEmptyFlag(bulidCommit))
+
+	// Config
 	cfg := config.GetConfig()
 
 	// Лог
@@ -50,4 +64,11 @@ func run() error {
 	// Завершение работы
 	service.Close()
 	return nil
+}
+
+func fillEmptyFlag(s string) string {
+	if s == "" {
+		s = "N/A"
+	}
+	return s
 }

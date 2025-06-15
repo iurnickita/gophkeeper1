@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iurnickita/gophkeeper1/internal/client/model"
 	"github.com/iurnickita/gophkeeper1/internal/client/service"
 	"github.com/spf13/cobra"
 )
@@ -57,25 +56,38 @@ func Execute(service service.Service) {
 	rootCmd.AddCommand(listCmd)
 
 	// Read
+	var readTarget string
 	var readCmd = &cobra.Command{
 		Use:     "rd",
 		Aliases: []string{"read"},
 		Short:   "Read: rd <unitname>",
 		Long:    "Read возвращает единицу данных по имени. Формат ввода: rd <unitname>",
 		Args:    cobra.ExactArgs(1),
-		Run:     handler.read,
+		Run: func(cmd *cobra.Command, args []string) {
+			handler.read(args, readTarget)
+		},
 	}
+	readCmd.Flags().StringVarP(&readTarget, "target", "t", "", "Target directory to result output")
 	rootCmd.AddCommand(readCmd)
 
 	// Write
+	var writeSource string
 	var writeCmd = &cobra.Command{
 		Use:     "wr",
 		Aliases: []string{"write"},
 		Short:   "Write: wr <unitname> <type> <data>",
-		Long:    "Write сохраняет единицу данных. Формат ввода: wr <unitname> <type> <data>",
-		Args:    cobra.ExactArgs(3),
-		Run:     handler.write,
+		Long: `Write сохраняет единицу данных. Формат ввода: wr <unitname> <type> <data>
+	Доступные <type>:
+	1 - login. <data>: "login password"
+	2 - text. <data>: "text"
+	3 - binary. <data>: _
+	4 - card. <data>: "number yearmonth name surname cvv"`,
+		Args: cobra.ExactArgs(3),
+		Run: func(cmd *cobra.Command, args []string) {
+			handler.write(args, writeSource)
+		},
 	}
+	writeCmd.Flags().StringVarP(&writeSource, "source", "s", "", "Source directory to read from")
 	rootCmd.AddCommand(writeCmd)
 
 	// Delete
@@ -138,8 +150,8 @@ func (h cliHandler) list(cmd *cobra.Command, args []string) {
 }
 
 // Read
-func (h cliHandler) read(cmd *cobra.Command, args []string) {
-	unit, err := h.service.Read(args[0])
+func (h cliHandler) read(args []string, target string) {
+	unitValue, err := h.service.Read(args[0], target)
 	if err != nil {
 		switch err {
 		case service.ErrOffline:
@@ -151,22 +163,21 @@ func (h cliHandler) read(cmd *cobra.Command, args []string) {
 			return
 		}
 	}
-	fmt.Fprintln(os.Stdout, string(unit.Body.Data))
+
+	fmt.Fprintln(os.Stdout, unitValue)
 }
 
 // Write
-func (h cliHandler) write(cmd *cobra.Command, args []string) {
-	// Формирование dataunit
-	unittype, err := strconv.Atoi(args[1])
+func (h cliHandler) write(args []string, source string) {
+	unitName := args[0]
+	unitType, err := strconv.Atoi(args[1])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
-	unit := model.Unit{Name: args[0], Body: model.UnitBody{Meta: model.UnitMeta{Type: unittype}, Data: []byte(args[2])}}
+	unitValue := args[2]
 
-	// Запись
-	err = h.service.Write(unit)
-	if err != nil {
+	if err := h.service.Write(unitName, unitType, unitValue, source); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}

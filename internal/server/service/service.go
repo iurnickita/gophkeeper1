@@ -27,7 +27,7 @@ type service struct {
 	zaplog  *zap.Logger
 }
 
-// List implements Service.
+// List возвращает список доступных данных
 func (s service) List(ctx context.Context, userID int) ([]string, error) {
 	return s.store.List(ctx, userID)
 }
@@ -78,9 +78,19 @@ func (s service) Write(ctx context.Context, unit model.Unit) error {
 	return nil
 }
 
-// Delete implements Service.
+// Delete удаляет единицу данных
 func (s service) Delete(ctx context.Context, userID int, unitName string) error {
-	panic("unimplemented")
+	s.zaplog.Sugar().Debug("inbound unitname")
+	s.zaplog.Sugar().Debug(unitName)
+
+	// Удаление
+	err := s.store.Delete(ctx, userID, unitName)
+	if err != nil {
+		s.zaplog.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // NewService создает объект сервиса

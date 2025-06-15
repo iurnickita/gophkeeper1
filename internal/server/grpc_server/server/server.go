@@ -78,7 +78,18 @@ func (s *Server) Authenticate(ctx context.Context, in *pb.AuthenticateRequest) (
 
 // List
 func (s *Server) List(ctx context.Context, in *pb.Empty) (*pb.ListResponse, error) {
-	return &pb.ListResponse{}, nil
+	// Код пользователя
+	userID, err := strconv.Atoi(ctx.Value(auth.ContextUserID).(string))
+	if err != nil {
+		return &pb.ListResponse{}, status.Error(codes.Internal, err.Error())
+	}
+
+	// Получение списка доступных данных
+	list, err := s.gophkeeper.List(ctx, userID)
+	if err != nil {
+		return &pb.ListResponse{}, status.Error(codes.Internal, err.Error())
+	}
+	return &pb.ListResponse{Unitname: list}, nil
 }
 
 // Read
@@ -129,7 +140,23 @@ func (s *Server) Write(ctx context.Context, in *pb.WriteRequest) (*pb.Empty, err
 
 // Delete
 func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Empty, error) {
-	panic("unimplemented")
+	// Код пользователя
+	userID, err := strconv.Atoi(ctx.Value(auth.ContextUserID).(string))
+	if err != nil {
+		return &pb.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+
+	// Чтение единицы данных
+	err = s.gophkeeper.Delete(ctx, userID, in.Unitname)
+	if err != nil {
+		switch err {
+		case store.ErrNoRows:
+			return &pb.Empty{}, status.Error(codes.NotFound, err.Error())
+		default:
+			return &pb.Empty{}, status.Error(codes.Internal, err.Error())
+		}
+	}
+	return &pb.Empty{}, nil
 }
 
 // Serve - запуск сервера

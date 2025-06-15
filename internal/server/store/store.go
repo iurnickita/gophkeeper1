@@ -84,7 +84,30 @@ func (s *psqlStore) AuthLogin(ctx context.Context, login string, password string
 
 // List implements Store.
 func (s *psqlStore) List(ctx context.Context, userID int) ([]string, error) {
-	panic("unimplemented")
+	rows, err := s.database.QueryContext(ctx,
+		"SELECT unitname"+
+			" FROM data_units"+
+			" WHERE userid = $1"+
+			"	AND del_flag = FALSE",
+		userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []string
+	for rows.Next() {
+		var unitname string
+		err := rows.Scan(&unitname)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, unitname)
+	}
+	if rows.Err() != nil {
+		return nil, err
+	}
+
+	return list, nil
 }
 
 // Read implements Store.
@@ -93,7 +116,8 @@ func (s *psqlStore) Read(ctx context.Context, userID int, unitName string) (mode
 		"SELECT userid, unitname, uploadedat, type, datask, data"+
 			" FROM data_units"+
 			" WHERE userid   = $1"+
-			"   AND unitname = $2",
+			"   AND unitname = $2"+
+			"	AND del_flag = FALSE",
 		userID,
 		unitName)
 	var unit model.Unit
@@ -138,7 +162,20 @@ func (s *psqlStore) Write(ctx context.Context, unit model.Unit) error {
 
 // Delete implements Store.
 func (s *psqlStore) Delete(ctx context.Context, userID int, unitName string) error {
-	panic("unimplemented")
+	_, err := s.database.ExecContext(ctx,
+		"UPDATE data_units"+
+			" SET del_flag = TRUE"+
+			" WHERE userid = $1"+
+			"	AND unitname = $2",
+		userID,
+		unitName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNoRows
+		}
+		return err
+	}
+	return nil
 }
 
 // GetEncryptSK
@@ -150,9 +187,6 @@ func (s *psqlStore) GetEncryptSK(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	if rows.Err() != nil {
-		return nil, err
-	}
 	var keys []string
 	for rows.Next() {
 		var key string
@@ -208,6 +242,7 @@ func NewStore(cfg config.Config) (Store, error) {
 			" type SMALLINT NOT NULL," +
 			" datask VARCHAR (400) NOT NULL," +
 			" data BYTEA NOT NULL," +
+			" del_flag BOOLEAN DEFAULT FALSE" +
 			" PRIMARY KEY (userid, unitname)" +
 			" );")
 	if err != nil {

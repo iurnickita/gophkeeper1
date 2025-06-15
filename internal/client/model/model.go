@@ -28,3 +28,16 @@ const (
 	UnitTypeBinary = 3
 	UnitTypeCard   = 4
 )
+
+type Login struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type BankCard struct {
+	Number      string `json:"number"`
+	YearMonthTo string `json:"year_month"`
+	Name        string `json:"name"`
+	Surname     string `json:"surname"`
+	CVV         string `json:"cvv"`
+}
