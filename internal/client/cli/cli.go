@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/iurnickita/gophkeeper1/internal/client/service"
+	"github.com/iurnickita/gophkeeper1/internal/client/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -101,6 +102,15 @@ func Execute(service service.Service) {
 	}
 	rootCmd.AddCommand(deleteCmd)
 
+	// TUI
+	var tuiCmd = &cobra.Command{
+		Use:     "tui",
+		Aliases: []string{"ui"},
+		Short:   "Интерактивный TUI интерфейс",
+		Run:     handler.tui,
+	}
+	rootCmd.AddCommand(tuiCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Ошибка выполнения GophKeeper '%s'\n", err)
 		os.Exit(1)
@@ -192,4 +202,11 @@ func (h cliHandler) delete(cmd *cobra.Command, args []string) {
 		return
 	}
 	fmt.Fprintln(os.Stdout, "OK")
+}
+
+// TUI
+func (h cliHandler) tui(cmd *cobra.Command, args []string) {
+	if err := tui.Run(h.service); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
 }
